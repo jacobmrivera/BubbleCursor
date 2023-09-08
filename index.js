@@ -13,12 +13,10 @@ function intDist(item, curs) {
   return Math.sqrt(dX + dY) - circleRadius;
 }
 
-
 // Function to computer Containment Distance
 function conDist(item, curs) {
   dX = (item[0] - curs.clientX) ** 2;
   dY = (item[1] - curs.clientY) ** 2;
-
   return Math.sqrt(dX + dY) + circleRadius;
 }
 
@@ -26,26 +24,43 @@ function conDist(item, curs) {
 function originDist(item, curs) {
   dX = (item[0] - curs.clientX) ** 2;
   dY = (item[1] - curs.clientY) ** 2;
-
   return Math.sqrt(dX + dY);
 }
 
+// gets the origin of a circle element
 function getOrigin(point) {
   var rect = point.getBoundingClientRect();
   var centerX = rect.left + rect.width / 2;
   var centerY = rect.top + rect.height / 2;
-  console.log(`Element ID: ${point.id}`);
-  // console.log(`CenterX: ${centerX}px, CenterY: ${centerY}px`);
-
   return [centerX, centerY];
 }
 
 var cursorRing = document.getElementById("cursor");
 
+// Function to check if the bubble cursor overlaps with an element
+function isCursorOverElement(element) {
+    const cursorRect = cursorRing.getBoundingClientRect();
+    console.log(cursorRect);
+    const elementRect = element.getBoundingClientRect();
+
+    // Calculate the distance between the centers of the cursor and the element
+    const cursorX = cursorRect.left + cursorRect.width / 2;
+    const cursorY = cursorRect.top + cursorRect.height / 2;
+
+    const elementX = elementRect.left + elementRect.width / 2;
+    const elementY = elementRect.top + elementRect.height / 2;
+
+    const distance = Math.sqrt((cursorX - elementX) ** 2 + (cursorY - elementY) ** 2);
+
+    // Check if the distance is less than the sum of the radii of the cursor and the element
+    return distance < cursorRect.width / 2 + elementRect.width / 2;
+}
+
+var bool = false;
+
 document.body.addEventListener("mousemove", function(e) {
   cursorRing.style.left = e.clientX + "px",
   cursorRing.style.top = e.clientY + "px";
-
 
   var circleElements = document.querySelectorAll('.circle');
   var closestElem = "0";
@@ -54,7 +69,6 @@ document.body.addEventListener("mousemove", function(e) {
   var secondMinDist = 1000000000000;
 
   circleElements.forEach(element => {
-    console.log(element.id); // Access element content or perform other actions
     let origin = getOrigin(element);
     let X = origin[0];
     let Y = origin[1];
@@ -70,21 +84,64 @@ document.body.addEventListener("mousemove", function(e) {
       secondMinDist = dist;
       secondClosestElem = element.id;
     }
+
+    if (isCursorOverElement(element)) {
+      element.style.borderColor = 'gray';
+    } else {
+      element.style.borderColor = 'transparent';
+    }
   });
 
-  // now that we have the closest and second closest elements,
-  //    need to compute the Intersecting and Containment Distance
-  console.log(closestElem);
-
-
-  // intDist(origin, e) ;
+  // set to get containment and intersecting distances
   minDist += circleRadius;
   secondMinDist -= circleRadius;
 
   var cursorRadius = Math.min(minDist, secondMinDist);
-  // cursorRing.style.left = e.clientX + "px",
-  // cursorRing.style.top = e.clientY + "px";
-  cursorRing.style.width = cursorRadius + "px";
-  cursorRing.style.height = cursorRadius + "px";
 
+  if (bubbleBool){
+    cursorRing.style.width = (cursorRadius + 30) + "px";
+    cursorRing.style.height = (cursorRadius + 30) + "px";
+  }
+
+  if (bool == false) {
+    circleElements.forEach((e) => {
+      e.addEventListener("click", clickElement);
+      });
+    bool = true;
+  }
 });
+
+// Function to trigger a click event on an element
+function clickElement(element) {
+  let circleEls = document.querySelectorAll('.circle');
+  circleEls.forEach(element => {
+    if (isCursorOverElement(element)) {
+      element.style.backgroundColor = 'blue'; // set circle to blue
+      setTimeout(function() { // wait 1 second and go back to red
+        element.style.backgroundColor = 'red';
+    }, 1000);
+    }
+  });
+}
+
+// adds listening to everywhere on grid object
+window.onload = function () {
+  var grid = document.getElementById('grid');
+  grid.addEventListener("click", clickElement);
+};
+
+var bubbleBool = true;
+// sets or unsets the bubble depending on the button click
+function switchCursor() {
+  var cursorToChange = document.getElementById("cursor");
+
+    if (bubbleBool) {
+      cursorToChange.style.width = "0px";
+      cursorToChange.style.height = "0px";
+      bubbleBool = false;
+    }else {
+      cursorToChange.style.width = "100px";
+      cursorToChange.style.height = "100px";
+      bubbleBool = true;
+    }
+}
